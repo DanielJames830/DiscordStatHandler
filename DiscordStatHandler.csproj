@@ -15,4 +15,8 @@
     <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-nightly-00709" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="bin\Debug\netcoreapp3.1\Data\Stats\" />
+  </ItemGroup>
+
 </Project>

@@ -1,4 +1,5 @@
-﻿using DSharpPlus;
+﻿using DiscordStatHandler.Commands;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.EventArgs;
 using Newtonsoft.Json;
@@ -47,7 +48,8 @@ namespace DiscordStatHandler
             };
 
             Commands = Client.UseCommandsNext(commandsConfig);
-
+            Commands.RegisterCommands<SheetManager>();
+            Commands.RegisterCommands<RoleplayManager>();
             await Client.ConnectAsync();
 
             await Task.Delay(-1);
