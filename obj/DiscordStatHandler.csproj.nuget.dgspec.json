@@ -38,6 +38,20 @@
       },
       "frameworks": {
         "netcoreapp3.1": {
+          "dependencies": {
+            "DSharpPlus": {
+              "target": "Package",
+              "version": "[4.0.0-nightly-00709, )"
+            },
+            "DSharpPlus.CommandsNext": {
+              "target": "Package",
+              "version": "[4.0.0-nightly-00709, )"
+            },
+            "DSharpPlus.Interactivity": {
+              "target": "Package",
+              "version": "[4.0.0-nightly-00709, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",

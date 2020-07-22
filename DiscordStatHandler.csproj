@@ -5,4 +5,14 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Content Include="bin\Debug\netcoreapp3.1\config.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00709" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00709" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-nightly-00709" />
+  </ItemGroup>
+
 </Project>
