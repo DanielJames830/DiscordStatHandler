@@ -35,10 +35,10 @@ namespace DiscordStatHandler.Commands
             foreach (var _file in ctx.Message.Attachments)
             {
                 if (!_file.FileName.Contains(".stat"))
-                    await ctx.Channel.SendMessageAsync(ctx.User.Mention + ": this isn't a stat sheet! :/");
+                    await ctx.Channel.SendMessageAsync(ctx.User.Mention + ": this isn't a stat sheet!");
                 else
                 {
-                    SaveCharacterSheet(_file);
+                    DownloadCharacterSheet(_file, ctx);
                     await ctx.Channel.SendMessageAsync(ctx.User.Mention + ": " + _file.FileName + " has been uploaded!");
                 }
             }
@@ -47,12 +47,12 @@ namespace DiscordStatHandler.Commands
         [Command("export")]
         public async Task Export(CommandContext ctx, string name)
         {
-
-            FileInfo fi = new FileInfo(@"Data\Stats\" + name + ".stat");
+            StatSheet stat = GetCharacterSheet(name);
+            FileInfo fi = new FileInfo(@stat.Path);
             if (fi.Exists)
             {
                 await ctx.Channel.SendMessageAsync(ctx.User.Mention + ": Here is your file");
-                await ctx.RespondWithFileAsync(@"Data\Stats\" + name + ".stat").ConfigureAwait(false);
+                await ctx.RespondWithFileAsync(@stat.Path).ConfigureAwait(false);
             }
 
             else
@@ -60,26 +60,29 @@ namespace DiscordStatHandler.Commands
 
         }
 
-        [Command("delete")]
-        public async Task Delete(CommandContext ctx, string name)
+        public static void DownloadCharacterSheet(DiscordAttachment _file, CommandContext ctx)
         {
-            FileInfo fi = new FileInfo(@"Data\Stats\" + name + ".stat");
-            if (fi.Exists)
+            string directory = @"Data\Stats\";
+
+            string pathString = System.IO.Path.Combine(directory, ctx.User.Username);
+            System.IO.Directory.CreateDirectory(pathString);
+            pathString = System.IO.Path.Combine(pathString, _file.FileName);
+
+            if (!File.Exists(pathString))
             {
-                await ctx.Channel.SendMessageAsync(ctx.User.Mention + ": " + name + "'s sheet has been deleted.");
-                File.Delete(@"Data\Stats\" + name + ".stat");
+                using (var client = new WebClient())
+                {
+                    client.DownloadFile(_file.Url, pathString);
+                }
             }
 
-            else
-                await ctx.Channel.SendMessageAsync(ctx.User.Mention + ": Hmmm, I don't see " + name + " in my database.");
+
+
         }
 
-        public static void SaveCharacterSheet(DiscordAttachment _file)
+        public static void SaveCharacterSheet(StatSheet stat)
         {
-            using (var client = new WebClient())
-            {
-              client.DownloadFile(_file.Url, @"Data\Stats\" + _file.FileName);
-            }
+
         }
 
         public static void UpdateCharacterSheet(StatSheet sheet)
@@ -95,22 +98,25 @@ namespace DiscordStatHandler.Commands
 
         public static StatSheet GetCharacterSheet(string name)
         {
-            if (name.Contains(".stat"))
-                name.Replace(".stat","");
+            string[] files = Directory.GetFiles(@"Data\Stats\", "*.stat", SearchOption.AllDirectories);
 
 
-            FileInfo fi = new FileInfo(@"Data\Stats\" + name + ".stat");
-            if (!fi.Exists)
-                return null;
+            foreach(var f in files)
+            {
+                if (f.Contains(name))
+                {
+                    var json = string.Empty;
+                    using (var fs = File.OpenRead(@f))
+                    using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
+                        json = sr.ReadToEnd();
 
+                    var stat = JsonConvert.DeserializeObject<StatSheet>(json);
+                    stat.Path = f;
+                    return stat;
+                }
 
-            var json = string.Empty;
-            using (var fs = File.OpenRead(@"Data\Stats\" + name + ".stat"))
-            using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
-                json = sr.ReadToEnd();
-
-            var stat = JsonConvert.DeserializeObject<StatSheet>(json);
-            return stat;
+            }
+            return null;
         }
 
         public string ConvertStatToString(StatSheet input)

@@ -7,8 +7,8 @@ namespace DiscordStatHandler
 {
     public class StatSheet
     {
-        [JsonProperty("owner")]
-        public string Owner { get; set; }
+        [JsonProperty("path")]
+        public string Path { get; set; }
 
         [JsonProperty("isPrivate")]
         public bool isPrivate { get; set; }
