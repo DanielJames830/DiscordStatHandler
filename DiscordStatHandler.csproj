@@ -6,7 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="bin\Release\netcoreapp3.1\Data\Stats\MostLikelyALlama\**" />
+    <EmbeddedResource Remove="bin\Release\netcoreapp3.1\Data\Stats\MostLikelyALlama\**" />
+    <None Remove="bin\Release\netcoreapp3.1\Data\Stats\MostLikelyALlama\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="bin\Debug\netcoreapp3.1\config.json" />
+    <Content Include="bin\Release\netcoreapp3.1\config.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,6 +24,7 @@
 
   <ItemGroup>
     <Folder Include="bin\Debug\netcoreapp3.1\Data\Stats\" />
+    <Folder Include="bin\Release\netcoreapp3.1\Data\Stats\" />
   </ItemGroup>
 
 </Project>

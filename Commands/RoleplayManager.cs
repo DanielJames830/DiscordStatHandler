@@ -16,7 +16,7 @@ namespace DiscordStatHandler.Commands
         [Command("playas")]
         public async Task PlayAs(CommandContext ctx, string name)
         {
-            var character = SheetManager.GetCharacterSheet(name);
+            var character = BotFunctionality.GetCharacterSheet(name);
 
             if (character == null)
                await CommandFailed(ctx);

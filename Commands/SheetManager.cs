@@ -20,7 +20,7 @@ namespace DiscordStatHandler.Commands
         public async Task Print(CommandContext ctx, string name)
         {
 
-            StatSheet stat = GetCharacterSheet(name);
+            StatSheet stat = BotFunctionality.GetCharacterSheet(name);
 
             if (stat == null)
                 await ctx.Channel.SendMessageAsync(ctx.User.Mention + ": a character by the name of " + name + " does not exist.").ConfigureAwait(false);
@@ -29,7 +29,7 @@ namespace DiscordStatHandler.Commands
             else
             {
                 Console.WriteLine("Retreieved");
-                await ctx.Channel.SendMessageAsync(ConvertStatToString(stat)).ConfigureAwait(false);
+                await ctx.Channel.SendMessageAsync(BotFunctionality.ConvertStatToString(stat)).ConfigureAwait(false);
                 Console.WriteLine("Test" + stat.debug);
             }
                 
@@ -44,7 +44,7 @@ namespace DiscordStatHandler.Commands
                     await ctx.Channel.SendMessageAsync(ctx.User.Mention + ": this isn't a stat sheet!");
                 else
                 {
-                    DownloadCharacterSheet(_file, ctx);
+                    BotFunctionality.DownloadCharacterSheet(_file, ctx);
                     await ctx.Channel.SendMessageAsync(ctx.User.Mention + ": " + _file.FileName + " has been uploaded!");
                 }
             }
@@ -53,7 +53,7 @@ namespace DiscordStatHandler.Commands
         [Command("export")]
         public async Task Export(CommandContext ctx, string name)
         {
-            StatSheet stat = GetCharacterSheet(name);
+            StatSheet stat = BotFunctionality.GetCharacterSheet(name);
             FileInfo fi = new FileInfo(@stat.Path);
             if (fi.Exists)
             {
@@ -69,8 +69,8 @@ namespace DiscordStatHandler.Commands
         [Command("save")]
         public async Task Save(CommandContext ctx, string name)
         {
-            var stat = GetCharacterSheet(name);
-            SaveCharacterSheet(stat, ctx);
+            var stat = BotFunctionality.GetCharacterSheet(name);
+            BotFunctionality.SaveCharacterSheet(stat, ctx);
             await ctx.Channel.SendMessageAsync("File saved").ConfigureAwait(false);
         }
 
@@ -81,21 +81,20 @@ namespace DiscordStatHandler.Commands
             var stat = new StatSheet();
             stat.madeByDiscord = true;
             var interactivity = ctx.Client.GetInteractivity();
-
         name:
             await ctx.Channel.SendMessageAsync("Let's get started! Firstly, what is your character's name?");
             var name = await interactivity.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Author.Username == commandInit);
-            stat.Name = name.Result.Content;
+            BotFunctionality.ChangeName(name.Result.Content, stat);
 
         race:
             await ctx.Channel.SendMessageAsync("What is your character's race?");
             var race = await interactivity.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Author.Username == commandInit);
-            stat.Race = race.Result.Content;
+            BotFunctionality.ChangeRace(race.Result.Content, stat);
 
         gender:
             await ctx.Channel.SendMessageAsync("What is your character's gender?");
             var gender = await interactivity.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Author.Username == commandInit);
-            stat.Gender = gender.Result.Content;
+            BotFunctionality.ChangeGender(gender.Result.Content, stat);
 
         level:
             await ctx.Channel.SendMessageAsync("What level are they?");
@@ -103,7 +102,7 @@ namespace DiscordStatHandler.Commands
             try
             {
                 var level = Int32.Parse(input.Result.Content);
-                stat.Level = level;
+                BotFunctionality.ChangeLevel(level, stat);
 
             }
 
@@ -118,7 +117,7 @@ namespace DiscordStatHandler.Commands
             architype:
                 await ctx.Channel.SendMessageAsync("What is their architype?");
                 var architype = await interactivity.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Author.Username == commandInit);
-                stat.Architype = architype.Result.Content;
+                BotFunctionality.ChangeArchitype(architype.Result.Content, stat);
             }
 
         health:
@@ -128,8 +127,7 @@ namespace DiscordStatHandler.Commands
             try
             {
                 var health = Int32.Parse(input1.Result.Content);
-                stat.Health = health;
-
+                BotFunctionality.ChangeHealth(health, stat);
             }
 
             catch
@@ -139,140 +137,149 @@ namespace DiscordStatHandler.Commands
             }
 
         stats:
-            await ctx.Channel.SendMessageAsync("What stats do they have? (please format like this:)" + System.Environment.NewLine + "statName:1" + System.Environment.NewLine + "statName:1" + System.Environment.NewLine + "statName:1");
+            await ctx.Channel.SendMessageAsync("What stats do they have? (please format like this)" + System.Environment.NewLine + "statName:1" + System.Environment.NewLine + "statName:1" + System.Environment.NewLine + "statName:1");
             var input2 = await interactivity.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Author.Username == commandInit);
             var statblock = input2.Result.Content.Split("\n");
-            stat.statblock = new System.Collections.Generic.Dictionary<string, int>();
-            foreach (var item in statblock)
+            stat.statblock = new Dictionary<string, int>();
+            try
             {
-                var newstat = item.Split(":");
+                BotFunctionality.AddStat(statblock, stat);
+            }
 
-                try
-                {
-
-                    stat.statblock.Add(newstat[0], int.Parse(newstat[1]));
-                }
-
-                catch
-                {
-                    await ctx.Channel.SendMessageAsync("Unable to read stats");
-                    stat.statblock = new System.Collections.Generic.Dictionary<string, int>();
-                    goto stats;
-                }
+            catch
+            {
+                await ctx.Channel.SendMessageAsync("Unable to read stats");
+                goto stats;
             }
 
         focuses:
 
-            await ctx.Channel.SendMessageAsync("What focuses do they have? (please format like this:)" + System.Environment.NewLine + "focusName:1" + System.Environment.NewLine + "focusName:1" + System.Environment.NewLine + "focusName:1");
+            await ctx.Channel.SendMessageAsync("What focuses do they have? (please format like this)" + System.Environment.NewLine + "focusName:1" + System.Environment.NewLine + "focusName:1" + System.Environment.NewLine + "focusName:1");
             var input3 = await interactivity.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Author.Username == commandInit);
             var focuses = input3.Result.Content.Split("\n");
-            List<string> focus = new List<string>();
-            List<int> focuslevel = new List<int>();
-            foreach (var item in focuses)
+            try
             {
-                var newfocus = item.Split(":");
-
-                try
-                {
-
-                    focus.Add(newfocus[0]);
-                    stat.Focuses = focus.ToArray();
-
-
-
-                    focuslevel.Add(int.Parse(newfocus[1]));
-                    stat.FocusLevels = focuslevel.ToArray();
-                }
-
-                catch
-                {
-                    await ctx.Channel.SendMessageAsync("Unable to read focuses");
-
-                    goto focuses;
-                }
+                BotFunctionality.AddFocus(focuses, stat);
             }
 
+            catch
+            {
+                await ctx.Channel.SendMessageAsync("Unable to read focuses");
+                goto focuses;
+            }
+            
+
         abilities:
-            await ctx.Channel.SendMessageAsync("What abilities do they have? (please format like this:)" + System.Environment.NewLine + "abilityName1" + System.Environment.NewLine + "abilityName2" + System.Environment.NewLine + "abilityName3");
+            await ctx.Channel.SendMessageAsync("What abilities do they have? (please format like this)" + System.Environment.NewLine + "abilityName1" + System.Environment.NewLine + "abilityName2" + System.Environment.NewLine + "abilityName3");
             var input4 = await interactivity.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Author.Username == commandInit);
             var abilities = input4.Result.Content.Split("\n");
-            stat.Abilities = abilities;
+            try
+            {
+                BotFunctionality.AddAbility(abilities, stat);
+            }
+
+            catch
+            {
+                await ctx.Channel.SendMessageAsync("Unable to read abilities");
+                goto abilities;
+            }
 
 
         inventory:
-            await ctx.Channel.SendMessageAsync("What stats do they have? (please format like this:)" + System.Environment.NewLine + "itemName:1" + System.Environment.NewLine + "itemName:1" + System.Environment.NewLine + "itemName:1");
+            await ctx.Channel.SendMessageAsync("What items do they have? (please format like this)" + System.Environment.NewLine + "itemName:1" + System.Environment.NewLine + "itemName:1" + System.Environment.NewLine + "itemName:1");
             var input5 = await interactivity.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Author.Username == commandInit);
             var inventory = input5.Result.Content.Split("\n");
-            stat.inventory = new System.Collections.Generic.Dictionary<string, int>();
-            foreach (var item in inventory)
+            try
             {
-                var newitem = item.Split(":");
+                BotFunctionality.AddItem(inventory, stat);
+            }
 
-                try
-                {
-
-                    stat.inventory.Add(newitem[0], int.Parse(newitem[1]));
-                }
-
-                catch
-                {
-                    await ctx.Channel.SendMessageAsync("Unable to read inventory");
-                    stat.inventory = new System.Collections.Generic.Dictionary<string, int>();
-                    goto inventory;
-                }
+            catch
+            {
+                await ctx.Channel.SendMessageAsync("Unable to read items");
+                goto inventory;
             }
 
 
-            SaveCharacterSheet(stat, ctx);
+            BotFunctionality.SaveCharacterSheet(stat, ctx);
             await ctx.Channel.SendMessageAsync("Complete!");
         }
 
 
         [Command("add")]
-        public async Task add(CommandContext ctx, string field, string character)
+        public async Task Add(CommandContext ctx, string field, string character)
         {
             var commandInit = ctx.User.Username;
             var interactivity = ctx.Client.GetInteractivity();
-            var stat = GetCharacterSheet(character);
+            var stat = BotFunctionality.GetCharacterSheet(character);
 
             if (field == "focus")
             {
             focuses:
-                await ctx.Channel.SendMessageAsync("What focuses would you like to add? (please format like this:)" + System.Environment.NewLine + "focusName:1" + System.Environment.NewLine + "focusName:1" + System.Environment.NewLine + "focusName:1");
+                await ctx.Channel.SendMessageAsync("What focuses would you like to add? (please format like this)" + System.Environment.NewLine + "focusName:1" + System.Environment.NewLine + "focusName:1" + System.Environment.NewLine + "focusName:1");
                 var input3 = await interactivity.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Author.Username == commandInit);
                 var focuses = input3.Result.Content.Split("\n");
-                List<string> focus = stat.Focuses.ToList<string>();
-                List<int> focuslevel = stat.FocusLevels.ToList<int>();
-                foreach (var item in focuses)
+
+                try
                 {
-                    var newfocus = item.Split(":");
+                    BotFunctionality.AddFocus(focuses, stat);
+                }
 
-                    try
-                    {
+                catch
+                {
+                    await ctx.Channel.SendMessageAsync("Unable to read focuses");
+                    goto focuses;
+                }
 
-                        focus.Add(newfocus[0]);
-                        stat.Focuses = focus.ToArray();
+            }
 
+            if (field == "ability")
+            {
+            abilities:
+                await ctx.Channel.SendMessageAsync("What abilities would you like to add? (please format like this)" + System.Environment.NewLine + "abilityName1" + System.Environment.NewLine + "abilityName2" + System.Environment.NewLine + "abilityName3");
+                var input4 = await interactivity.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Author.Username == commandInit);
+                var abilities = input4.Result.Content.Split("\n");
+                try
+                {
+                    BotFunctionality.AddAbility(abilities, stat);
+                }
 
-
-                        focuslevel.Add(int.Parse(newfocus[1]));
-                        stat.FocusLevels = focuslevel.ToArray();
-                    }
-
-                    catch
-                    {
-                        await ctx.Channel.SendMessageAsync("Unable to read focuses");
-
-                        goto focuses;
-                    }
+                catch
+                {
+                    await ctx.Channel.SendMessageAsync("Unable to read abilities");
+                    goto abilities;
                 }
             }
 
+            if (field == "item")
+            {
+            items:
+                await ctx.Channel.SendMessageAsync("What items would you like to add? (please format like this)" + System.Environment.NewLine + "itemName:1" + System.Environment.NewLine + "itemName:1" + System.Environment.NewLine + "itemName:1");
+                var input3 = await interactivity.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Author.Username == commandInit);
+                var items = input3.Result.Content.Split("\n");
 
-            SaveCharacterSheet(stat, ctx);
+                try
+                {
+                    BotFunctionality.AddItem(items, stat);
+                }
+
+                catch
+                {
+                    await ctx.Channel.SendMessageAsync("Unable to read items");
+                    goto items;
+                }
+
+            }
+
+
+            BotFunctionality.SaveCharacterSheet(stat, ctx);
         }
         
-        
+        [Command("edit")]
+        public async Task Edit(CommandContext ctx, string name)
+        {
+
+        }
         
         
         
@@ -284,7 +291,7 @@ namespace DiscordStatHandler.Commands
             {
                 RoleplayManager.playerRoles[ctx.User.Username].inventory.Add(name, count);
                 await ctx.Channel.SendMessageAsync(ctx.User.Mention + ": Added " + "x[" + count + "] " + name + " to " + RoleplayManager.playerRoles[ctx.User.Username].Name + "'s inventory");
-                SheetManager.SaveCharacterSheet(RoleplayManager.playerRoles[ctx.User.Username], ctx);
+                BotFunctionality.SaveCharacterSheet(RoleplayManager.playerRoles[ctx.User.Username], ctx);
             }
         }
 
@@ -317,148 +324,14 @@ namespace DiscordStatHandler.Commands
 
 
 
-                SheetManager.SaveCharacterSheet(RoleplayManager.playerRoles[ctx.User.Username], ctx);
+                BotFunctionality.SaveCharacterSheet(RoleplayManager.playerRoles[ctx.User.Username], ctx);
             }
 
             else
                 await ctx.Channel.SendMessageAsync(ctx.User.Mention + ": You don't seem to be playing a a specific character").ConfigureAwait(false);
         }
 
-        public static void DownloadCharacterSheet(DiscordAttachment _file, CommandContext ctx)
-        {
-            string directory = @"Data\Stats\";
-
-            string pathString = System.IO.Path.Combine(directory, ctx.User.Username);
-            System.IO.Directory.CreateDirectory(pathString);
-            pathString = System.IO.Path.Combine(pathString, _file.FileName);
-
-            if (!File.Exists(pathString))
-            {
-                using (var client = new WebClient())
-                {
-                    client.DownloadFile(_file.Url, pathString);
-                }
-            }
-
-
-
-        }
-
-        public static void SaveCharacterSheet(StatSheet stat, CommandContext ctx)
-        {
-            if (File.Exists(@stat.Path))
-            {
-                stat.debug = "Yeet";
-                var _json = JsonConvert.SerializeObject(stat);
-                File.WriteAllText(@stat.Path, _json);
-            }
-
-            else
-            {
-                var _json = JsonConvert.SerializeObject(stat);
-                string pathString = System.IO.Path.Combine(@"Data\Stats\", ctx.User.Username);
-                System.IO.Directory.CreateDirectory(pathString);
-                pathString = System.IO.Path.Combine(pathString, stat.Name + ".stat");
-                File.WriteAllText(pathString, _json);
-            }
-        }
-
-        public static void UpdateCharacterSheet(StatSheet sheet)
-        {
-
-
-           var json = JsonConvert.SerializeObject(sheet);
-
-
-
-            File.WriteAllText(@"Data\Stats\" + sheet.Name + ".stat", json);
-        }
-
-        public static StatSheet GetCharacterSheet(string name)
-        {
-            string[] files = Directory.GetFiles(@"Data\Stats\", "*.stat", SearchOption.AllDirectories);
-
-
-            foreach(var f in files)
-            {
-                if (f.Contains(name))
-                {
-                    var json = string.Empty;
-                    using (var fs = File.OpenRead(@f))
-                    using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
-                        json = sr.ReadToEnd();
-
-                    var stat = JsonConvert.DeserializeObject<StatSheet>(json);
-                    stat.Path = f;
-                    return stat;
-                }
-
-            }
-            return null;
-        }
-
-        public string ConvertStatToString(StatSheet input)
-        {
-            var output = string.Empty;
-            output += "Name: " + input.Name + System.Environment.NewLine;
-            output += "Gender: " + input.Gender + System.Environment.NewLine;
-            output += "Race: " + input.Race + System.Environment.NewLine;
-            output += System.Environment.NewLine;
-            output += "Level: " + input.Level + System.Environment.NewLine;
-            output += "Architype: " + input.Architype + System.Environment.NewLine;
-            output += "Health: " + input.Health + System.Environment.NewLine;
-            output += System.Environment.NewLine;
-            output += "Stats:" + System.Environment.NewLine;
-
-
-            if (!input.madeByDiscord)
-            {
-                output += "-Command: " + input.stats[0] + System.Environment.NewLine;
-                output += "-Perception: " + input.stats[1] + System.Environment.NewLine;
-                output += "-Intelligence: " + input.stats[2] + System.Environment.NewLine;
-                output += "-Accuracy: " + input.stats[3] + System.Environment.NewLine;
-                output += "-Reflex: " + input.stats[4] + System.Environment.NewLine;
-                output += System.Environment.NewLine;
-
-            }
-
-            else
-            {
-                foreach (var stat in input.statblock)
-                    output += "-" + stat.Key + ": " + stat.Value + System.Environment.NewLine;
-                output += System.Environment.NewLine;
-            }
-
-            output += "Focuses:" + System.Environment.NewLine;
-
-            foreach (var focus in input.Focuses)
-            {
-                var focusList = input.Focuses.ToList();
-                output += "-" + focus + ": " + input.FocusLevels[focusList.IndexOf(focus)] + System.Environment.NewLine;
-            }
-
-            output += System.Environment.NewLine;
-            output += "Abilities:" + System.Environment.NewLine;
-
-            foreach (var ability in input.Abilities)
-            {
-                output += "-" + ability + System.Environment.NewLine;
-            }
-
-            output += System.Environment.NewLine;
-            output += "Inventory:" + System.Environment.NewLine;
-
-            foreach(var item in input.inventory)
-            {
-                output +=  "-" + item.Key + ":" + item.Value + System.Environment.NewLine;
-            }
-
-            return output;
-
-
-        }
-
-        
-
+       
+       
     }
 }
