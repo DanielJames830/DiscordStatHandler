@@ -2,6 +2,7 @@
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace DiscordStatHandler
     class Bot
     {
         public DiscordClient Client { get; private set; }
+        public InteractivityExtension Interactivity { get; private set; }
         public CommandsNextExtension Commands { get; private set; }
 
 
@@ -39,12 +41,18 @@ namespace DiscordStatHandler
 
             Client.Ready += OnClientReady;
 
+            Client.UseInteractivity(new InteractivityConfiguration
+            {
+
+            });
+
             var commandsConfig = new CommandsNextConfiguration
             {
                 StringPrefixes = new string[] { configJson.Prefix },
                 EnableMentionPrefix = true,
                 EnableDms = true,
-                IgnoreExtraArguments = true
+                IgnoreExtraArguments = true,
+                CaseSensitive = false
             };
 
             Commands = Client.UseCommandsNext(commandsConfig);

@@ -84,7 +84,7 @@ namespace DiscordStatHandler.Commands
                     if (arg.Contains("+") || arg.Contains("-") || arg.Contains("*") || arg.Contains("/"))
                     {
                         tally = DoMath(arg, command, tally);
-                        if(tally == 99999)
+                        if (tally == 99999)
                         {
                             await CommandFailed(ctx);
                             return;
@@ -105,6 +105,9 @@ namespace DiscordStatHandler.Commands
             output += "= " + tally;
             await ctx.Channel.SendMessageAsync(output).ConfigureAwait(false);
         }
+
+        
+
 
         public static Die InitializeRoll(List<string> input)
         {
